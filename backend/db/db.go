@@ -9,7 +9,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func ConnectMigrate(dsn string) (*sql.DB, error) {
+func ConnectAndMigrate(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("sql.Open: %w", err)
@@ -17,12 +17,15 @@ func ConnectMigrate(dsn string) (*sql.DB, error) {
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("db.Ping: %w", err)
 	}
+
 	goose.SetDialect("postgres")
-	migrationDir := "backend/db/migrations"
+
+	migrationsDir := "backend/db/migrations"
 
 	if err := goose.Up(db, migrationsDir); err != nil {
-		return nil, fmt.Errorf("goose:Up: %w", err)
+		return nil, fmt.Errorf("goose.Up: %w", err)
 	}
-	log.Println("Database migrations applied successfully")
+
+	log.Println("✅ Database migrations applied successfully")
 	return db, nil
 }

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS sources (
   description TEXT,
   url VARCHAR(255),
   src_type src_type NOT NULL,
-  collection_method VARCHAR(20) NOT NULL 'api',
+  collection_method VARCHAR(20) NOT NULL DEFAULT 'api',
   api_key VARCHAR(255),
   api_config JSONB,
   rate_limit INTEGER DEFAULT 0,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS ioc_metadata (
 
 CREATE TABLE IF NOT EXISTS ioc_tags (
   id SERIAL PRIMARY KEY,
-  ioc_id INTEGER NOT NULL REFERENCES ioc(id) ON DELETE CASCADE,
+  ioc_id INTEGER NOT NULL REFERENCES iocs(id) ON DELETE CASCADE,
   tag VARCHAR(100) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(ioc_id, tag)
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS src_iocs (
   raw_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(src_id, ioc_id, external_id),
+  UNIQUE(src_id, ioc_id)
 );
 
 CREATE TABLE IF NOT EXISTS ioc_enrichments (
@@ -84,34 +84,29 @@ CREATE TABLE IF NOT EXISTS ioc_relations (
   src_ioc_id INTEGER NOT NULL REFERENCES iocs(id) ON DELETE CASCADE,
   target_ioc_id INTEGER NOT NULL REFERENCES iocs(id) ON DELETE CASCADE,
   relationship_type VARCHAR(50) NOT NULL,
-  src_id INTEGER REFERENCES src(id),
+  src_id INTEGER REFERENCES sources(id),
   confidence_score INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(src_ioc_id, target_ioc_id, relationship_type)
 );
 
+-- Indexes
 CREATE INDEX idx_iocs_value ON iocs(value);
 CREATE INDEX idx_iocs_type ON iocs(type);
 CREATE INDEX idx_iocs_status ON iocs(status);
+CREATE INDEX idx_iocs_first_seen ON iocs(first_seen_at);
+CREATE INDEX idx_iocs_confidence ON iocs(confidence_score);
 CREATE INDEX idx_src_iocs_src_id ON src_iocs(src_id);
 CREATE INDEX idx_src_iocs_ioc_id ON src_iocs(ioc_id);
-CREATE INDEX idx_ioc_relationship_src ON ioc_relationships(src_ioc_id);
-CREATE INDEX idx_ioc_relationship_target ON ioc_relationships(target_ioc_id);
+CREATE INDEX idx_ioc_relations_src ON ioc_relations(src_ioc_id);
+CREATE INDEX idx_ioc_relations_target ON ioc_relations(target_ioc_id);
 CREATE INDEX idx_ioc_tags_ioc_id ON ioc_tags(ioc_id);
 CREATE INDEX idx_ioc_tags_tag ON ioc_tags(tag);
+CREATE INDEX idx_ioc_metadata_ioc_id ON ioc_metadata(ioc_id);
+CREATE INDEX idx_sources_enabled ON sources(enabled);
 
-DROP INDEX IF EXISTS idx_iocs_value;
-DROP INDEX IF EXISTS idx_iocs_type;
-DROP INDEX IF EXISTS idx_iocs_status;
-DROP INDEX IF EXISTS idx_src_iocs_src_id;
-DROP INDEX IF EXISTS idx_src_iocs_ioc_id;
-DROP INDEX IF EXISTS idx_ioc_relationship_src;
-DROP INDEX IF EXISTS idx_ioc_relationship_target;
-DROP INDEX IF EXISTS idx_ioc_tags_ioc_id;
-DROP INDEX IF EXISTS idx_ioc_tags_tag;
-
--- +goose down
+-- +goose Down
 DROP TABLE IF EXISTS ioc_relations;
 DROP TABLE IF EXISTS ioc_enrichments;
 DROP TABLE IF EXISTS src_iocs;
@@ -123,4 +118,3 @@ DROP TABLE IF EXISTS sources;
 DROP TYPE IF EXISTS ioc_type;
 DROP TYPE IF EXISTS ioc_status;
 DROP TYPE IF EXISTS src_type;
-

@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/h3bzzz/ioc_dash/backend/api"
 	"github.com/h3bzzz/ioc_dash/backend/config"
 	"github.com/h3bzzz/ioc_dash/backend/db"
-	"github.com/h3bzzz/ioc_dash/backend/ingestion"
-	"github.com/h3bzzz/ioc_dash/backend/api"
 )
 
 func main() {
@@ -20,7 +19,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	database, err := db.ConnectMigrate(cfg.DB_DSN)
+	database, err := db.ConnectAndMigrate(cfg.DB_DSN)
 	if err != nil {
 		log.Fatalf("failed to connect & migrate DB: %v", err)
 	}
@@ -35,14 +34,12 @@ func main() {
 		ingestion.StartCollection(database, cfg.PollInterval)
 	}()
 
-	// Fiber Up
 	app := fiber.New()
 
-	// You Good?
-	app.Get("/health", func(c *fiber.Ctx) error {
+	app.Get("/health", func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"status": "ok",
-			"time": time.Now().Format(time.RFC3339)
+			"time":   time.Now().Format(time.RFC3339),
 		})
 	})
 
