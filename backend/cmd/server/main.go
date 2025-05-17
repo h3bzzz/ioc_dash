@@ -43,7 +43,6 @@ func main() {
 		})
 	})
 
-	api.RegisterRoutes(app, database)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
